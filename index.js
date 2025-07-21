@@ -40,6 +40,11 @@ const {argv} = yargs(hideBin(process.argv))
     type: 'string',
     default: 'gemini-2.5-flash'
   })
+  .option('html', {
+    description: 'Output HTML file instead of EPUB',
+    boolean: true,
+    default: false
+  })
   .help()
   .alias('help', 'h')
 
@@ -120,47 +125,53 @@ and an array of chapter titles in the "chapters" property.`,
 
   spinnies.succeed(spinnerId)
 
-  let json
+  let meta
+
   try {
-    json = JSON.parse(res)
+    meta = JSON.parse(res)
   } catch (e) {
     console.error('Error parsing JSON:', e)
     console.error('Raw response:', res)
     process.exit(1)
   }
 
-  if (!json.chapters?.length) {
+  if (!meta.chapters?.length) {
     console.error('No chapters found in analysis')
     console.error('Raw response:', res)
     process.exit(1)
   }
 
-  $('title').text(json.title)
-  $('h1').text(json.title)
-  $('ul').html(
-    json.chapters
-      .map((c, i) => `<li><a href="#${chapterId(i + 1)}">${c}</a></li>`)
-      .join('\n')
-  )
-  $('main').html(
-    json.chapters
-      .map((c, i) => `<div id="${chapterId(i + 1)}">${c}</div>`)
-      .join('\n')
-  )
+  if (argv.html) {
+    $('title').text(meta.title)
+    $('h1').text(meta.title)
+    $('ul').html(
+      meta.chapters
+        .map((c, i) => `<li><a href="#${chapterId(i + 1)}">${c}</a></li>`)
+        .join('\n')
+    )
+    $('main').html(
+      meta.chapters
+        .map((c, i) => `<div id="${chapterId(i + 1)}">${c}</div>`)
+        .join('\n')
+    )
+  }
 
   const content = await Promise.all(
     meta.chapters.map((c, i) => genChapter(c, i + 1, meta.chapters[i + 1]))
   )
 
-  await new EPub(
-    {
-      title: meta.title,
-      author: meta.author,
-      tocTitle: 'Table of Contents',
-      content
-    },
-    argv.output
-  ).render()
+  if (!argv.html) {
+    await new EPub(
+      {
+        title: meta.title,
+        author: meta.author,
+        publisher: 'https://github.com/dmotz/spellbinder',
+        tocTitle: 'Table of Contents',
+        content
+      },
+      argv.output
+    ).render()
+  }
 
   console.log('Done!')
 }
@@ -168,9 +179,10 @@ and an array of chapter titles in the "chapters" property.`,
 const genChapter = limitFunction(
   async (title, chapterN, nextTitle) => {
     const spinnerId = `chapter-${chapterN}`
-    spinnies.add(spinnerId, {text: `Chapter ${chapterN}: ${title}`})
+    const spinnerTitle = `Chapter ${chapterN}: ${title}`
+    spinnies.add(spinnerId, {text: spinnerTitle})
 
-    const res = await callModel(
+    const data = await callModel(
       `\
 You have been tasked with converting this PDF to an EPUB in a series of steps. \
 
@@ -183,9 +195,9 @@ Here are the conversion requirements:
 - Remove inline footnote numbers.
 
 For the current step, we want to convert ONLY one chapter: "Chapter ${chapterN}: ${title}". \
-The output should begin with an <h1> tag with the chapter number and title followed \
-by the tags containing the chapter content (<p>, <h2>, <ol>, <blockquote>, etc.). \
-The chapter MAY contain subchapters, which should be headed with <h2> tags. \
+Do not add the chapter title to the output. The output should consist only of the \
+tags containing the chapter content (<p>, <h2>, <ol>, <blockquote>, etc.). The \
+chapter MAY contain subsections, which should be headed with <h2> tags.
 
 Please output only the HTML for this particular chapter, and nothing else, no commentary. \
 ${
@@ -200,9 +212,14 @@ ${
       spinnerId
     )
 
-    $(`#${chapterId(chapterN)}`).html(res)
-    writeFileSync(argv.output, $.html())
-    spinnies.succeed(spinnerId)
+    if (argv.html) {
+      $(`#${chapterId(chapterN)}`).html(`<h2>${title}</h2>\n${data}`)
+      writeFileSync(argv.output, $.html())
+    }
+
+    spinnies.succeed(spinnerId, {text: spinnerTitle})
+
+    return {title, data}
   },
   {concurrency: 5}
 )
