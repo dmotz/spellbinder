@@ -180,7 +180,7 @@ and an array of chapter titles in the "chapters" property.`,
 const genChapter = limitFunction(
   async (title, chapterN, nextTitle) => {
     const spinnerId = `chapter-${chapterN}`
-    const spinnerTitle = `Chapter ${chapterN}: ${title}`
+    const spinnerTitle = `${chapterN}: ${title}`
     spin.add(spinnerId, {text: spinnerTitle})
 
     const data = await callModel(
