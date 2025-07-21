@@ -50,7 +50,7 @@ const {argv} = yargs(hideBin(process.argv))
   .alias('help', 'h')
 
 const ai = new GoogleGenAI({apiKey: argv.key})
-const spinnies = new Spinnies()
+const spin = new Spinnies()
 const mimeType = 'application/pdf'
 
 const chapterId = n => `chapter-${n}`
@@ -82,15 +82,15 @@ const callModel = async (prompt, responseSchema, spinnerId, attempt = 0) => {
     return res.text.replace(/```html\n/, '').replace(/\n```/, '')
   } catch (e) {
     if (attempt < 3) {
-      const {text} = spinnies.pick(spinnerId)
-      spinnies.update(spinnerId, {
+      const {text} = spin.pick(spinnerId)
+      spin.update(spinnerId, {
         text: `${text} - Error, retrying... (attempt ${attempt + 1})`,
         color: 'yellow'
       })
       return callModel(prompt, responseSchema, spinnerId, attempt + 1)
     }
 
-    spinnies.fail(spinnerId)
+    spin.fail(spinnerId)
     console.error('Error calling model:', e.message)
     process.exit(1)
   }
@@ -98,15 +98,15 @@ const callModel = async (prompt, responseSchema, spinnerId, attempt = 0) => {
 
 const uploadFile = async path => {
   const spinnerId = 'upload'
-  spinnies.add(spinnerId, {text: 'File upload'})
+  spin.add(spinnerId, {text: 'File upload'})
   const res = await ai.files.upload({file: path, config: {mimeType}})
-  spinnies.succeed(spinnerId)
+  spin.succeed(spinnerId)
   return createPartFromUri(res.uri, mimeType)
 }
 
 const main = async () => {
   const spinnerId = 'processing'
-  spinnies.add(spinnerId, {text: 'Structure analysis'})
+  spin.add(spinnerId, {text: 'Structure analysis'})
 
   const res = await callModel(
     `\
@@ -124,7 +124,7 @@ and an array of chapter titles in the "chapters" property.`,
     spinnerId
   )
 
-  spinnies.succeed(spinnerId)
+  spin.succeed(spinnerId)
 
   let meta
 
@@ -181,7 +181,7 @@ const genChapter = limitFunction(
   async (title, chapterN, nextTitle) => {
     const spinnerId = `chapter-${chapterN}`
     const spinnerTitle = `Chapter ${chapterN}: ${title}`
-    spinnies.add(spinnerId, {text: spinnerTitle})
+    spin.add(spinnerId, {text: spinnerTitle})
 
     const data = await callModel(
       `\
@@ -218,7 +218,7 @@ ${
       writeFileSync(argv.output, $.html())
     }
 
-    spinnies.succeed(spinnerId, {text: spinnerTitle})
+    spin.succeed(spinnerId, {text: spinnerTitle})
 
     return {title, data}
   },
