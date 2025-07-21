@@ -100,20 +100,22 @@ const uploadFile = async path => {
 
 const main = async () => {
   const spinnerId = 'processing'
-  spinnies.add(spinnerId, {text: 'Chapter analysis'})
+  spinnies.add(spinnerId, {text: 'Structure analysis'})
 
   const res = await callModel(
     `\
 Examine the provided PDF carefully and return a JSON object with the work's title \
-in the "title" property (use "Unknown" if it's not clear) and an array of chapter \
-titles in the "chapters" property.`,
+in the "title" property, its author in the "author" property, (use "Unknown" if it's not clear) \
+and an array of chapter titles in the "chapters" property.`,
     {
       type: Type.OBJECT,
       properties: {
         title: {type: Type.STRING},
+        author: {type: Type.STRING},
         chapters: {type: Type.ARRAY, items: {type: Type.STRING}}
       }
-    }
+    },
+    spinnerId
   )
 
   spinnies.succeed(spinnerId)
