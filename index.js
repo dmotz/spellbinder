@@ -11,6 +11,7 @@ import {
 } from '@google/genai'
 import {load} from 'cheerio'
 import {limitFunction} from 'p-limit'
+import {EPub} from '@lesjoursfr/html-to-epub'
 import Spinnies from 'spinnies'
 import template from './template.js'
 
@@ -145,9 +146,19 @@ titles in the "chapters" property.`,
       .join('\n')
   )
 
-  await Promise.all(
-    json.chapters.map((c, i) => genChapter(c, i + 1, json.chapters[i + 1]))
+  const content = await Promise.all(
+    meta.chapters.map((c, i) => genChapter(c, i + 1, meta.chapters[i + 1]))
   )
+
+  await new EPub(
+    {
+      title: meta.title,
+      author: meta.author,
+      tocTitle: 'Table of Contents',
+      content
+    },
+    argv.output
+  ).render()
 
   console.log('Done!')
 }
