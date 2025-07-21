@@ -48,7 +48,7 @@ const mimeType = 'application/pdf'
 
 const chapterId = n => `chapter-${n}`
 
-const callModel = async (prompt, responseSchema, chapterN, attempt = 0) => {
+const callModel = async (prompt, responseSchema, spinnerId, attempt = 0) => {
   try {
     const res = await ai.models.generateContent({
       model: argv.model,
@@ -75,13 +75,15 @@ const callModel = async (prompt, responseSchema, chapterN, attempt = 0) => {
     return res.text.replace(/```html\n/, '').replace(/\n```/, '')
   } catch (e) {
     if (attempt < 3) {
-      console.error(
-        `Encountered error on Chapter ${chapterN}, retrying... (attempt ${
-          attempt + 1
-        })`
-      )
-      return callModel(prompt, responseSchema, chapterN, attempt + 1)
+      const {text} = spinnies.pick(spinnerId)
+      spinnies.update(spinnerId, {
+        text: `${text} - Error, retrying... (attempt ${attempt + 1})`,
+        color: 'yellow'
+      })
+      return callModel(prompt, responseSchema, spinnerId, attempt + 1)
     }
+
+    spinnies.fail(spinnerId)
     console.error('Error calling model:', e.message)
     process.exit(1)
   }
@@ -180,7 +182,9 @@ ${
       }: ${nextTitle}", then stop.`
     : ''
 }
-`
+`,
+      null,
+      spinnerId
     )
 
     $(`#${chapterId(chapterN)}`).html(res)
