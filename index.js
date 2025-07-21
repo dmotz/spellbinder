@@ -16,6 +16,7 @@ import Spinnies from 'spinnies'
 import template from './template.js'
 
 const {argv} = yargs(hideBin(process.argv))
+  .scriptName('spellbinder')
   .option('input', {
     alias: 'i',
     description: 'Input PDF file path',
@@ -24,19 +25,19 @@ const {argv} = yargs(hideBin(process.argv))
   })
   .option('output', {
     alias: 'o',
-    description: 'Output HTML file path',
+    description: 'Output EPUB file path',
     type: 'string',
     demandOption: true
   })
   .option('key', {
     alias: 'k',
-    description: 'Google Gemini API Key',
+    description: 'Gemini API key',
     type: 'string',
     demandOption: true
   })
   .option('model', {
     alias: 'm',
-    description: 'Google Gemini Model',
+    description: 'Gemini model string',
     type: 'string',
     default: 'gemini-2.5-flash'
   })
