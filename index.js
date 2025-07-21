@@ -59,9 +59,10 @@ const callModel = async (prompt, responseSchema, spinnerId, attempt = 0) => {
   try {
     const res = await ai.models.generateContent({
       model: argv.model,
-      contents: createUserContent([inputFile]),
+      contents: createUserContent([inputFile, {text: prompt}]),
       config: {
-        systemInstruction: prompt,
+        systemInstruction:
+          'You are an expert at carefully analyzing PDF files and extracting structured data.',
         temperature: 0.3,
         safetySettings: [
           'HARM_CATEGORY_HATE_SPEECH',
