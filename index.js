@@ -48,20 +48,31 @@ const {argv} = yargs(hideBin(process.argv))
   })
   .help()
   .alias('help', 'h')
+  .check(argv => {
+    if (!argv._[0]) {
+      throw new Error('Input file is required')
+    }
 
-const envKey = 'GEMINI_API_KEY'
-const apiKey = argv.key || process.env[envKey]
+    if (!existsSync(argv._[0])) {
+      throw new Error(`Input file does not exist: ${argv._[0]}`)
+    }
 
-if (!apiKey) {
-  console.error(
-    `Make sure to provide an API key with the --${keyFlag} flag or set the ${envKey} environment variable.`
-  )
-  process.exit(1)
-}
+    argv._[1] ||= argv._[0].replace(/\.pdf$/i, argv.html ? '.html' : '.epub')
 
-const ai = new GoogleGenAI({apiKey})
+    if (existsSync(argv._[1])) {
+      throw new Error(
+        `Output file already exists: ${argv._[1]}.\n` +
+          'Pass a second file path argument to choose a different output destination.'
+      )
+    }
+
+    return true
+  })
+
+const ai = new GoogleGenAI({apiKey: argv.apiKey})
 const spin = new Spinnies()
 const mimeType = 'application/pdf'
+const [inputPath, outputPath] = argv._
 
 const chapterId = n => `chapter-${n}`
 
@@ -181,7 +192,7 @@ and an array of chapter titles in the "chapters" property.`,
         tocTitle: 'Table of Contents',
         content
       },
-      argv.output
+      outputPath
     ).render()
   }
 
@@ -226,7 +237,7 @@ ${
 
     if (argv.html) {
       $(`#${chapterId(chapterN)}`).html(`<h2>${title}</h2>\n${data}`)
-      writeFileSync(argv.output, $.html())
+      writeFileSync(outputPath, $.html())
     }
 
     spin.succeed(spinnerId, {text: spinnerTitle})
@@ -237,5 +248,5 @@ ${
 )
 
 const $ = load(template)
-const inputFile = await uploadFile(argv.input)
+const inputFile = await uploadFile(inputPath)
 await main()
