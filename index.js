@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import {writeFileSync} from 'fs'
+import {existsSync, writeFileSync} from 'fs'
 import yargs from 'yargs'
 import {hideBin} from 'yargs/helpers'
 import {
@@ -15,25 +15,25 @@ import {EPub} from '@lesjoursfr/html-to-epub'
 import Spinnies from 'spinnies'
 import template from './template.js'
 
-const keyFlag = 'flag'
+const envKey = 'SPELLBINDER'
+const keyFlag = 'api-key'
 const {argv} = yargs(hideBin(process.argv))
   .scriptName('spellbinder')
-  .option('input', {
-    alias: 'i',
-    description: 'Input PDF file path',
-    type: 'string',
-    demandOption: true
+  .env(envKey)
+  .usage('$0 <input> [output] [options]')
+  .positional('input', {
+    describe: 'Input PDF file path',
+    type: 'string'
   })
-  .option('output', {
-    alias: 'o',
-    description: 'Output EPUB file path',
-    type: 'string',
-    demandOption: true
+  .positional('output', {
+    describe: 'Output file path (optional)',
+    type: 'string'
   })
   .option(keyFlag, {
     alias: 'k',
     description: 'Gemini API key',
-    type: 'string'
+    type: 'string',
+    demandOption: true
   })
   .option('model', {
     alias: 'm',
