@@ -15,6 +15,7 @@ import {EPub} from '@lesjoursfr/html-to-epub'
 import Spinnies from 'spinnies'
 import template from './template.js'
 
+const keyFlag = 'flag'
 const {argv} = yargs(hideBin(process.argv))
   .scriptName('spellbinder')
   .option('input', {
@@ -29,11 +30,10 @@ const {argv} = yargs(hideBin(process.argv))
     type: 'string',
     demandOption: true
   })
-  .option('key', {
+  .option(keyFlag, {
     alias: 'k',
     description: 'Gemini API key',
-    type: 'string',
-    demandOption: true
+    type: 'string'
   })
   .option('model', {
     alias: 'm',
@@ -49,7 +49,17 @@ const {argv} = yargs(hideBin(process.argv))
   .help()
   .alias('help', 'h')
 
-const ai = new GoogleGenAI({apiKey: argv.key})
+const envKey = 'GEMINI_API_KEY'
+const apiKey = argv.key || process.env[envKey]
+
+if (!apiKey) {
+  console.error(
+    `Make sure to provide an API key with the --${keyFlag} flag or set the ${envKey} environment variable.`
+  )
+  process.exit(1)
+}
+
+const ai = new GoogleGenAI({apiKey})
 const spin = new Spinnies()
 const mimeType = 'application/pdf'
 
