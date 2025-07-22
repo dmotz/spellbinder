@@ -42,6 +42,23 @@ You can explicitly pass a different output path with a second argument:
 spellbinder a-book.pdf a-better-book.epub
 ```
 
+You can also change the model or output raw HTML. Here's the full set of options:
+
+```shell
+spellbinder <input> [output] [options]
+
+Positionals:
+  input   Input PDF file path                                           [string]
+  output  Output file path (optional)                                   [string]
+
+Options:
+      --version  Show version number                                   [boolean]
+  -k, --api-key  Gemini API key                              [string] [required]
+  -m, --model    Gemini model string      [string] [default: "gemini-2.5-flash"]
+      --html     Output HTML file instead of EPUB     [boolean] [default: false]
+  -h, --help     Show help                                             [boolean]
+```
+
 ### Current limitations
 
 - No images
