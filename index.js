@@ -15,11 +15,10 @@ import {EPub} from '@lesjoursfr/html-to-epub'
 import Spinnies from 'spinnies'
 import template from './template.js'
 
-const envKey = 'SPELLBINDER'
-const keyFlag = 'api-key'
+const ns = 'spellbinder'
 const {argv} = yargs(hideBin(process.argv))
-  .scriptName('spellbinder')
-  .env(envKey)
+  .scriptName(ns)
+  .env(ns.toUpperCase())
   .usage('$0 <input> [output] [options]')
   .positional('input', {
     describe: 'Input PDF file path',
@@ -29,7 +28,7 @@ const {argv} = yargs(hideBin(process.argv))
     describe: 'Output file path (optional)',
     type: 'string'
   })
-  .option(keyFlag, {
+  .option('api-key', {
     alias: 'k',
     description: 'Gemini API key',
     type: 'string',
@@ -188,7 +187,7 @@ and an array of chapter titles in the "chapters" property.`,
       {
         title: meta.title,
         author: meta.author,
-        publisher: 'https://github.com/dmotz/spellbinder',
+        publisher: `https://github.com/dmotz/${ns}`,
         tocTitle: 'Table of Contents',
         content
       },
