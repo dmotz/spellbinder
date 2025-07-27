@@ -22,8 +22,8 @@ npm i -g spellbinder-cli
 ```
 
 Get a [Gemini API key](https://ai.google.dev/) and either set it to
-`SPELLBINDER_API_KEY` in your shell, or pass it via the `-k`/`--key` flag when
-running `spellbinder`.
+`SPELLBINDER_API_KEY` in your shell, or pass it via the `-k`/`--api-key` flag
+when running `spellbinder`.
 
 ### Usage
 
