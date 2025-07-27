@@ -72,6 +72,13 @@ const ai = new GoogleGenAI({apiKey: argv.apiKey})
 const spin = new Spinnies()
 const mimeType = 'application/pdf'
 const [inputPath, outputPath] = argv._
+const $ = load(template)
+const safetySettings = [
+  'HATE_SPEECH',
+  'HARASSMENT',
+  'DANGEROUS_CONTENT',
+  'SEXUALLY_EXPLICIT'
+].map(s => ({category: `HARM_CATEGORY_${s}`, threshold: 'BLOCK_NONE'}))
 
 const chapterId = n => `chapter-${n}`
 
@@ -84,12 +91,7 @@ const callModel = async (prompt, responseSchema, spinnerId, attempt = 0) => {
         systemInstruction:
           'You are an expert at carefully analyzing PDF files and extracting structured data.',
         temperature: 0.3,
-        safetySettings: [
-          'HARM_CATEGORY_HATE_SPEECH',
-          'HARM_CATEGORY_HARASSMENT',
-          'HARM_CATEGORY_DANGEROUS_CONTENT',
-          'HARM_CATEGORY_SEXUALLY_EXPLICIT'
-        ].map(s => ({category: s, threshold: 'BLOCK_NONE'})),
+        safetySettings,
         ...(responseSchema
           ? {responseMimeType: 'application/json', responseSchema}
           : {})
@@ -246,6 +248,5 @@ ${
   {concurrency: 5}
 )
 
-const $ = load(template)
 const inputFile = await uploadFile(inputPath)
 await main()
