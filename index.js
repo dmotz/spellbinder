@@ -36,9 +36,9 @@ const {argv} = yargs(hideBin(process.argv))
   })
   .option('model', {
     alias: 'm',
-    description: 'Gemini model string',
+    description: 'Gemini model',
     type: 'string',
-    default: 'gemini-2.5-flash'
+    default: 'gemini-3-flash-preview'
   })
   .option('html', {
     description: 'Output HTML file instead of EPUB',
@@ -90,7 +90,7 @@ const callModel = async (prompt, responseSchema, spinnerId, attempt = 0) => {
       config: {
         systemInstruction:
           'You are an expert at carefully analyzing PDF files and extracting structured data.',
-        temperature: 0.3,
+        temperature: 0.33,
         safetySettings,
         ...(responseSchema
           ? {responseMimeType: 'application/json', responseSchema}
