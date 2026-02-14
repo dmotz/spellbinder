@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import {existsSync, writeFileSync} from 'fs'
+import {existsSync} from 'fs'
 import yargs from 'yargs'
 import {hideBin} from 'yargs/helpers'
 import {
@@ -10,11 +10,9 @@ import {
   createUserContent,
   createPartFromUri
 } from '@google/genai'
-import {load} from 'cheerio'
 import {limitFunction} from 'p-limit'
 import {EPub} from '@lesjoursfr/html-to-epub'
 import Spinnies from 'spinnies'
-import template from './template.js'
 
 const ns = 'spellbinder'
 const {argv} = yargs(hideBin(process.argv))
@@ -41,11 +39,6 @@ const {argv} = yargs(hideBin(process.argv))
     type: 'string',
     default: 'gemini-3-flash-preview'
   })
-  .option('html', {
-    description: 'Output HTML file instead of EPUB',
-    boolean: true,
-    default: false
-  })
   .help()
   .alias('help', 'h')
   .check(argv => {
@@ -57,7 +50,7 @@ const {argv} = yargs(hideBin(process.argv))
       throw new Error(`Input file does not exist: ${argv._[0]}`)
     }
 
-    argv._[1] ||= argv._[0].replace(/\.pdf$/i, argv.html ? '.html' : '.epub')
+    argv._[1] ||= argv._[0].replace(/\.pdf$/i, '.epub')
 
     if (existsSync(argv._[1])) {
       throw new Error(
@@ -73,7 +66,6 @@ const ai = new GoogleGenAI({apiKey: argv.apiKey})
 const spin = new Spinnies()
 const mimeType = 'application/pdf'
 const [inputPath, outputPath] = argv._
-const $ = load(template)
 const safetySettings = Object.values(HarmCategory)
   .slice(1, 6)
   .map(category => ({category, threshold: 'OFF'}))
@@ -108,6 +100,7 @@ const callModel = async (prompt, responseSchema, spinnerId, attempt = 0) => {
         text: `${text} - Error, retrying... (attempt ${attempt + 1})`,
         color: 'yellow'
       })
+
       return callModel(prompt, responseSchema, spinnerId, attempt + 1)
     }
 
@@ -163,37 +156,21 @@ and an array of chapter titles in the "chapters" property.`,
     process.exit(1)
   }
 
-  if (argv.html) {
-    $('title').text(meta.title)
-    $('h1').text(meta.title)
-    $('ul').html(
-      meta.chapters
-        .map((c, i) => `<li><a href="#${chapterId(i + 1)}">${c}</a></li>`)
-        .join('\n')
-    )
-    $('main').html(
-      meta.chapters
-        .map((c, i) => `<div id="${chapterId(i + 1)}">${c}</div>`)
-        .join('\n')
-    )
-  }
-
   const content = await Promise.all(
     meta.chapters.map((c, i) => genChapter(c, i + 1, meta.chapters[i + 1]))
   )
 
-  if (!argv.html) {
-    await new EPub(
-      {
-        title: meta.title,
-        author: meta.author,
-        publisher: `https://github.com/dmotz/${ns}`,
-        tocTitle: 'Table of Contents',
-        content
-      },
-      outputPath
-    ).render()
-  }
+  await new EPub(
+    {
+      title: meta.title,
+      author: meta.author,
+      publisher: `https://github.com/dmotz/${ns}`,
+      tocTitle: 'Table of Contents',
+      description: '',
+      content
+    },
+    outputPath
+  ).render()
 
   console.log('Done!')
 }
@@ -233,11 +210,6 @@ ${
       null,
       spinnerId
     )
-
-    if (argv.html) {
-      $(`#${chapterId(chapterN)}`).html(`<h2>${title}</h2>\n${data}`)
-      writeFileSync(outputPath, $.html())
-    }
 
     spin.succeed(spinnerId, {text: spinnerTitle})
 

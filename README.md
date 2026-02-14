@@ -56,8 +56,7 @@ Options:
       --version  Show version number                                   [boolean]
   -k, --api-key  Gemini API key                              [string] [required]
   -m, --model    Gemini model       [string] [default: "gemini-3-flash-preview"]
-      --html     Output HTML file instead of EPUB     [boolean] [default: false]
-  -h, --help     Show help
+  -h, --help     Show help                                             [boolean]
 ```
 
 ### Current limitations
