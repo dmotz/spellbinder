@@ -6,6 +6,7 @@ import {hideBin} from 'yargs/helpers'
 import {
   GoogleGenAI,
   Type,
+  HarmCategory,
   createUserContent,
   createPartFromUri
 } from '@google/genai'
@@ -73,12 +74,9 @@ const spin = new Spinnies()
 const mimeType = 'application/pdf'
 const [inputPath, outputPath] = argv._
 const $ = load(template)
-const safetySettings = [
-  'HATE_SPEECH',
-  'HARASSMENT',
-  'DANGEROUS_CONTENT',
-  'SEXUALLY_EXPLICIT'
-].map(s => ({category: `HARM_CATEGORY_${s}`, threshold: 'BLOCK_NONE'}))
+const safetySettings = Object.values(HarmCategory)
+  .slice(1, 6)
+  .map(category => ({category, threshold: 'OFF'}))
 
 const chapterId = n => `chapter-${n}`
 
