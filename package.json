@@ -24,10 +24,9 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@google/genai": "^1.10.0",
-    "@lesjoursfr/html-to-epub": "^4.5.2",
-    "cheerio": "^1.1.2",
-    "p-limit": "^6.2.0",
+    "@google/genai": "^1.41.0",
+    "@lesjoursfr/html-to-epub": "^6.0.1",
+    "p-limit": "^7.3.0",
     "spinnies": "^0.5.1",
     "yargs": "^18.0.0"
   }
