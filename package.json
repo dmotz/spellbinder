@@ -1,6 +1,6 @@
 {
   "name": "spellbinder-cli",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Convert PDFs to EPUBs using AI",
   "main": "index.js",
   "type": "module",
