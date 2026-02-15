@@ -70,8 +70,6 @@ const safetySettings = Object.values(HarmCategory)
   .slice(1, 6)
   .map(category => ({category, threshold: 'OFF'}))
 
-const chapterId = n => `chapter-${n}`
-
 const callModel = async (prompt, responseSchema, spinnerId, attempt = 0) => {
   try {
     const res = await ai.models.generateContent({
@@ -124,15 +122,36 @@ const main = async () => {
 
   const res = await callModel(
     `\
-Examine the provided PDF carefully and return a JSON object with the work's title \
-in the "title" property, its author in the "author" property, (use "Unknown" if it's not clear) \
-and an array of chapter titles in the "chapters" property.`,
+Examine the provided PDF carefully and return a JSON object with the work's \
+title in the "title" property, its author in the "author" property, (use
+Unknown" if it's not clear) and an array of chapter objects in the "chapters" \
+property. Each chapter object should contain the chapter title (if it is \
+untitled, use the chapter number), the exact first sentence of the chapter (as \
+it appears in the PDF), and the exact last sentence of the chapter (as it \
+appears in the PDF). Take care and make sure that each last sentence is the \
+absolute final sentence of its respective chapter, otherwise the conversion \
+will be incorrect and missing content. These sentence boundaries will be used \
+to precisely demarcate chapter content during conversion. Important: if the \
+book organizes chapters into larger sections, do NOT insert the section titles \
+as chapters, only pick the atomic chapters themselves, i.e. return a flat list \
+of inner chapters without any section titles.`,
     {
       type: Type.OBJECT,
       properties: {
         title: {type: Type.STRING},
         author: {type: Type.STRING},
-        chapters: {type: Type.ARRAY, items: {type: Type.STRING}}
+        chapters: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              title: {type: Type.STRING},
+              firstSentence: {type: Type.STRING},
+              lastSentence: {type: Type.STRING}
+            },
+            required: ['title', 'firstSentence', 'lastSentence']
+          }
+        }
       }
     },
     spinnerId
@@ -157,7 +176,7 @@ and an array of chapter titles in the "chapters" property.`,
   }
 
   const content = await Promise.all(
-    meta.chapters.map((c, i) => genChapter(c, i + 1, meta.chapters[i + 1]))
+    meta.chapters.map((c, i) => genChapter(c, i + 1))
   )
 
   await new EPub(
@@ -176,44 +195,45 @@ and an array of chapter titles in the "chapters" property.`,
 }
 
 const genChapter = limitFunction(
-  async (title, chapterN, nextTitle) => {
+  async (chapter, chapterN) => {
     const spinnerId = `chapter-${chapterN}`
-    const spinnerTitle = `${chapterN}: ${title}`
+    const spinnerTitle = `${chapterN}: ${chapter.title}`
     spin.add(spinnerId, {text: spinnerTitle})
 
     const data = await callModel(
       `\
-You have been tasked with converting this PDF to an EPUB in a series of steps. \
+You have been tasked with converting this PDF to an EPUB in a series of steps.
 
 Here are the conversion requirements:
 
-- Retain basic formatting with proper headings, emphasis, and paragraphs for reflowable layout on e-readers.
+- Retain basic formatting with proper headings, emphasis, and paragraphs for \
+reflowable layout on e-readers.
 - Omit extraneous text like page headings, page numbers, footnotes, etc.
 - Fix any obvious OCR transcription errors.
-- Remove all images. The final output should not contain any images and be text only.
+- Remove all images. The final output should not contain any images and be text \
+only.
 - Remove inline footnote numbers.
 
-For the current step, we want to convert ONLY one chapter: "Chapter ${chapterN}: ${title}". \
-Do not add the chapter title to the output. The output should consist only of the \
-tags containing the chapter content (<p>, <h2>, <ol>, <blockquote>, etc.). The \
-chapter MAY contain subsections, which should be headed with <h2> tags.
+For the current step, we want to convert ONLY one chapter: "${chapter.title}". \
+Do not add the chapter title to the output. The output should consist only of \
+the tags containing the chapter content (<p>, <h2>, <ol>, <blockquote>, etc.). \
+The chapter MAY contain subsections, which should be headed with <h2> tags.
 
-Please output only the HTML for this particular chapter, and nothing else, no commentary. \
-${
-  nextTitle
-    ? `Continue until you reach the next chapter, which is "Chapter ${
-        chapterN + 1
-      }: ${nextTitle}", then stop.`
-    : ''
-}
-`,
+The chapter begins with this exact first sentence: "${chapter.firstSentence}"
+
+The chapter ends with this exact last sentence: "${chapter.lastSentence}"
+
+Please output only the HTML for this particular chapter, starting from the \
+first sentence and ending at the last sentence. Do not include content before \
+the first sentence or after the last sentence. Output nothing else, no \
+commentary.`,
       null,
       spinnerId
     )
 
     spin.succeed(spinnerId, {text: spinnerTitle})
 
-    return {title, data}
+    return {title: chapter.title, data}
   },
   {concurrency: 5}
 )
