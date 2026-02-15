@@ -4,7 +4,7 @@
 
 Pre-LLM tools in this vein usually output an unreadable mess. Spellbinder
 leverages the built-in PDF processing and large context window of the Gemini API
-and is able to output high quality EPUBs ready for ereaders (usually).
+and is (usually) able to output high quality EPUBs ready for ereaders.
 
 ### Features
 
