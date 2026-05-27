@@ -123,7 +123,7 @@ const main = async () => {
   const res = await callModel(
     `\
 Examine the provided PDF carefully and return a JSON object with the work's \
-title in the "title" property, its author in the "author" property, (use
+title in the "title" property, its author in the "author" property, (use \
 Unknown" if it's not clear) and an array of chapter objects in the "chapters" \
 property. Each chapter object should contain the chapter title (if it is \
 untitled, use the chapter number), the exact first sentence of the chapter (as \
